@@ -1,5 +1,5 @@
 import * as supertest from 'supertest'
-import * as cloudFunctions from '../index'
+import * as cloudFunctions from '../src/index'
 
 const request = supertest(cloudFunctions.binance)
 describe('index', () => {
@@ -16,8 +16,7 @@ describe('index', () => {
     })
 
     test('Allowed IP. Successful request', async () => {
-        const response = await request.post('/order')
-        .set('x-forwarded-for', `${process.env.ALLOW_IPS}`)
+        const response = await request.post('/order').set('x-forwarded-for', `${process.env.ALLOW_IPS}`)
         expect(response.statusCode).toBe(200)
     })
 })
