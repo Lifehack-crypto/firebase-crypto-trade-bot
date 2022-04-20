@@ -1,12 +1,15 @@
 {
   "include": [
-    ".eslintrc.js",
-    "test"
+    ".eslintrc.js"
   ],
   "compilerOptions": {
     "typeRoots": [
       "node_modules/@types",
-      "src/types"
-    ]
+      "src/types/modules",
+      "src/types/utils",
+      "src/types/request",
+      "src/types/response"
+    ],
+    "types" : ["jest"]
   }
 }
