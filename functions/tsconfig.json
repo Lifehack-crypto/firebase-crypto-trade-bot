@@ -9,11 +9,14 @@
     "target": "es2017",
     "typeRoots": [
       "node_modules/@types",
-      "src/types"
+      "src/types/modules",
+      "src/types/utils",
+      "src/types/request",
+      "src/types/response"
     ]
   },
   "compileOnSave": true,
   "include": [
     "src"
-  ]
+  ],
 }
