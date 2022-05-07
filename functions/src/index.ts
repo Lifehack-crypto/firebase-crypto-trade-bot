@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv'
 import { IpFilter, IpDeniedError } from 'express-ipfilter'
 import binanceOrder from './modules/binanceOrder'
 // interface
-import { HttpsFunction } from 'firebase-functions'
+import { HttpsFunction, Response } from 'firebase-functions'
 
 dotenv.config()
 const app: express.Express = express()
@@ -19,20 +19,21 @@ app.use(
     })
 )
 
-app.use((err: IpDeniedError, req: express.Request, res: express.Response, next: express.NextFunction): void => {
-    if (err instanceof IpDeniedError) {
-        res.status(401).send('Not allowed IP address')
-        return
+app.use(
+    (err: IpDeniedError, req: express.Request, res: express.Response, next: express.NextFunction): Response | void => {
+        if (err instanceof IpDeniedError) {
+            return res.status(401).send('Not allowed IP address')
+        }
+        next()
     }
-    res.status(500).send('Internal Server Error')
-})
+)
 
 app.use(express.json())
 app.post('/order', binanceOrder)
 export const binance: HttpsFunction = functions
     .runWith({
-        memory: '512MB'
-        // Keep 5 instances warm for this latency-critical function
-        // minInstances: 5
+        memory: '1GB',
+        minInstances: 1,
+        maxInstances: 5
     })
     .https.onRequest(app)
