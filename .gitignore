@@ -106,3 +106,10 @@ dist
 
 # debug
 functions/ui-debug.log
+
+# firebase
+.firebaserc
+firestore.indexes.json
+firebase.json
+firestore.rules
+example/tradingviewAlertExample.json
