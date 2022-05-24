@@ -1,12 +1,9 @@
 import CcxtWrapper from '../../src/utils/ccxtWrapper'
-import { TpAndSl } from '../../src/types/utils/ccxtWrapper'
+import { TpAndSl, ExchangeType } from '../../src/types/utils/ccxtWrapper'
 import { binance, Order } from 'ccxt'
 jest.mock('ccxt')
 
 describe('ccxtWrapper', () => {
-
-
-
     describe('Binance', () => {
         const exchangeName = 'binance'
         const testBalanceSymbol = 'USDT'
@@ -41,13 +38,13 @@ describe('ccxtWrapper', () => {
                 },
             }
             fetchBalanceMock.mockResolvedValue(balances)
-            const ccxtWrapper = new CcxtWrapper(apiKey, secret)
+            const ccxtWrapper = new CcxtWrapper(apiKey, secret, ExchangeType.DELIVERY)
             const result = await ccxtWrapper.getAvailableBalance(testBalanceSymbol)
             expect(result).toBe(Number(balances.info.assets[1].availableBalance))
         })
 
         test('newOrder', async () => {
-            const ccxtWrapper = new CcxtWrapper(apiKey, secret, exchangeName)
+            const ccxtWrapper = new CcxtWrapper(apiKey, secret, ExchangeType.DELIVERY, exchangeName)
             const limitPrice = 10000
             const orderResult: Order = {
                 "price": 10000,
@@ -102,7 +99,7 @@ describe('ccxtWrapper', () => {
         })
 
         test('stopOrder', async () => {
-            const ccxtWrapper = new CcxtWrapper(apiKey, secret, exchangeName)
+            const ccxtWrapper = new CcxtWrapper(apiKey, secret, ExchangeType.DELIVERY, exchangeName)
             const prices: TpAndSl = {
                 side: 'buy',
                 stopLossPrice: 10100,
@@ -162,7 +159,7 @@ describe('ccxtWrapper', () => {
         })
 
         test('takeProfitOrder', async () => {
-            const ccxtWrapper = new CcxtWrapper(apiKey, secret, exchangeName)
+            const ccxtWrapper = new CcxtWrapper(apiKey, secret, ExchangeType.DELIVERY, exchangeName)
             const prices: TpAndSl = {
                 side: 'buy',
                 stopLossPrice: 10100,
@@ -270,7 +267,7 @@ describe('ccxtWrapper', () => {
                     "amount": 0.028,
                     "lastTradeTimestamp": 1650819352434,
                 }
-                const ccxtWrapper = new CcxtWrapper(apiKey, secret, exchangeName)
+                const ccxtWrapper = new CcxtWrapper(apiKey, secret, ExchangeType.DELIVERY, exchangeName)
                 const takeProfit = 0.98
                 const stopLoss = 1.02
                 const result = ccxtWrapper.createTpSlOrderPrices(orderResult, takeProfit, stopLoss)
@@ -327,37 +324,13 @@ describe('ccxtWrapper', () => {
                     "amount": 0.028,
                     "lastTradeTimestamp": 1650819352434,
                 }
-                const ccxtWrapper = new CcxtWrapper(apiKey, secret, exchangeName)
+                const ccxtWrapper = new CcxtWrapper(apiKey, secret, ExchangeType.DELIVERY, exchangeName)
                 const takeProfit = 0.98
                 const stopLoss = 1.02
                 const result = ccxtWrapper.createTpSlOrderPrices(orderResult, takeProfit, stopLoss)
                 expect(result).toHaveProperty('side', 'buy')
                 expect(result).toHaveProperty('stopLossPrice', (orderResult.price * stopLoss))
                 expect(result).toHaveProperty('takeProfitPrice', (orderResult.price * takeProfit))
-            })
-        })
-    
-        describe('isBTC', () => {
-            test('symbol = BTC', () => {
-                const ccxtWrapper = new CcxtWrapper(apiKey, secret, exchangeName)
-                expect(ccxtWrapper.isBTC('BTCUSDT')).toBeTruthy()
-            })
-    
-            test('symbol = XRP', () => {
-                const ccxtWrapper = new CcxtWrapper(apiKey, secret, exchangeName)
-                expect(ccxtWrapper.isBTC('XRPSDT')).toBeFalsy()
-            })
-        })
-    
-        describe('isLong', () => {
-            test('side = sell', () => {
-                const ccxtWrapper = new CcxtWrapper(apiKey, secret, exchangeName)
-                expect(ccxtWrapper.isLong('sell')).toBeFalsy()
-            })
-    
-            test('side = buy', () => {
-                const ccxtWrapper = new CcxtWrapper(apiKey, secret, exchangeName)
-                expect(ccxtWrapper.isLong('buy')).toBeTruthy()
             })
         })
     })

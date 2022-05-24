@@ -26,6 +26,33 @@ export type OrderParams = {
     params?: Params
 }
 
+export const enum ExchangeType {
+    DELIVERY = 'delivery',
+    FUTURE = 'future',
+    MARGIN = 'margin',
+    SPOT = 'spot'
+}
+
+export const enum ExchangeName {
+    BINANCE = 'binance',
+    BYBIT = 'bybit'
+}
+
+/**
+ * STOP = stop指値注文
+ * STOP_MARKET = stop成行注文
+ * TAKE_PROFIT = takeprofit指値注文
+ * TAKE_PROFIT_MARKET = takeprofit成行注文
+ **/
+export const enum OrderType {
+    MARKET = 'MARKET',
+    LIMIT = 'LIMIT',
+    STOP = 'STOP',
+    STOP_MARKET = 'STOP_MARKET',
+    TAKE_PROFIT = 'TAKE_PROFIT',
+    TAKE_PROFIT_MARKET = 'TAKE_PROFIT_MARKET'
+}
+
 // createOrderのparamsオプション
 export type BinanceOrderParams = {
     reduceOnly?: boolean // trueならreduceOnly注文
@@ -38,14 +65,6 @@ export type BinanceOrderParams = {
     positionSide?: string
     activatePrice?: number
 }
-
-/**
- * STOP = stop指値注文
- * STOP_MARKET = stop成行注文
- * TAKE_PROFIT = takeprofit指値注文
- * TAKE_PROFIT_MARKET = takeprofit成行注文
- **/
-export type BinanceOrderTypes = 'MARKET' | 'LIMIT' | 'STOP' | 'STOP_MARKET' | 'TAKE_PROFIT' | 'TAKE_PROFIT_MARKET'
 
 export type Side = 'sell' | 'buy'
 
