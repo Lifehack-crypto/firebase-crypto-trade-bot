@@ -1,19 +1,30 @@
 import * as ccxt from 'ccxt'
-import { AssetInfo, BinanceOrderParams, TpAndSl, Side } from '../types/utils/ccxtWrapper'
+import CryptoUtils from './cryptoUtils'
+import {
+    AssetInfo,
+    BinanceOrderParams,
+    TpAndSl,
+    Side,
+    ExchangeName,
+    OrderType,
+    ExchangeType
+} from '../types/utils/ccxtWrapper'
 import { BinanceOrderResponse } from '../types/response/orderResponse'
 
 export default class CcxtWrapper {
     private cex: ccxt.Exchange
 
-    constructor(apiKey: string, secret: string, exchangeName?: string) {
+    constructor(apiKey: string, secret: string, type: ExchangeType, exchangeName?: string) {
         switch (exchangeName) {
-            case 'binance':
+            case ExchangeName.BINANCE:
                 this.cex = new ccxt.binance({
                     apiKey: apiKey,
                     secret: secret,
                     enableRateLimit: true,
                     options: {
-                        defaultType: 'future'
+                        defaultType: type
+                        // COIN M先物はdelivery
+                        // USDT S先物はfuture
                     }
                 })
                 break
@@ -23,7 +34,7 @@ export default class CcxtWrapper {
                     secret: secret,
                     enableRateLimit: true,
                     options: {
-                        defaultType: 'future'
+                        defaultType: ExchangeType.FUTURE
                     }
                 })
                 break
@@ -38,7 +49,7 @@ export default class CcxtWrapper {
     }
 
     public async newOrder(symbol: string, side: Side, amount: number, limitPrice: number): Promise<ccxt.Order> {
-        const orderResult = await this.cex.createOrder(symbol, 'LIMIT', side, amount, limitPrice)
+        const orderResult = await this.cex.createOrder(symbol, OrderType.LIMIT, side, amount, limitPrice)
         return orderResult
     }
 
@@ -49,7 +60,7 @@ export default class CcxtWrapper {
         }
         const orderResult = await this.cex.createOrder(
             newOrderResponse.symbol,
-            'STOP_MARKET',
+            OrderType.STOP_MARKET,
             prices.side,
             newOrderResponse.amount,
             prices.stopLossPrice,
@@ -65,7 +76,7 @@ export default class CcxtWrapper {
         }
         const orderResult = await this.cex.createOrder(
             newOrderResponse.symbol,
-            'TAKE_PROFIT',
+            OrderType.TAKE_PROFIT,
             prices.side,
             newOrderResponse.amount,
             prices.takeProfitPrice,
@@ -76,20 +87,9 @@ export default class CcxtWrapper {
 
     // TPとSP価格産出
     public createTpSlOrderPrices(orderInfo: BinanceOrderResponse, takeProfit: number, stopLoss: number): TpAndSl {
-        const side = this.isLong(orderInfo.side) ? 'sell' : 'buy' // 現在ポジションと逆にして利確注文に使う。ポジションがlongならsell、shortならbuy。
+        const side = CryptoUtils.isLong(orderInfo.side) ? 'sell' : 'buy' // 現在ポジションと逆にして利確注文に使う。ポジションがlongならsell、shortならbuy。
         const stopLossPrice = orderInfo.price * stopLoss
         const takeProfitPrice = orderInfo.price * takeProfit
         return { side, stopLossPrice, takeProfitPrice }
-    }
-
-    public isBTC(symbol: string): boolean {
-        return Boolean(symbol.match('BTC'))
-    }
-
-    public isLong(side: Side): boolean {
-        if (side === 'sell') {
-            return false
-        }
-        return true
     }
 }

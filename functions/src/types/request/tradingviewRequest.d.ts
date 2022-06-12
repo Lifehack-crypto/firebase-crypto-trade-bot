@@ -2,6 +2,8 @@ export type TradingviewRequest = {
     botName: string // botの名前
     symbol: string // 手動設定したティッカー (tradingviewのティッカーが使えない時用)
     ticker: string // tradingviewのティッカー
+    type: 'delivery' | 'future' | 'margin' | 'spot' // 交換タイプ
+    marginCoin: 'BTC' | 'USDT' // 証拠金として使用する通貨
     strategy: Strategy
 }
 
