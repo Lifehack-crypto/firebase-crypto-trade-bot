@@ -20,7 +20,7 @@ export const BTC_LONG_LIMIT_WIDTH = 0.9999 // ロング指値幅 比率
 export const BTC_SHORT_LIMIT_WIDTH = 1.00006 // ショート指値幅 比率
 export const ALT_LONG_LIMIT_WIDTH = 0.9996 // ロング指値幅 比率
 export const ALT_SHORT_LIMIT_WIDTH = 1.0001 // ショート指値幅 比率
-export const BTC_LEVERAGE = 3.2 // BTC注文時のレバレッジ
+export const BTC_LEVERAGE = 6 // BTC注文時のレバレッジ
 export const ALT_LEVERAGE = 1.9 // ALT注文時のレバレッジ
 export const NAME_TAG_BINANCE_KEY = 'binance_api_key'
 export const NAME_TAG_BINANCE_SECRET = 'binance_secret'
@@ -29,7 +29,7 @@ export const BTC_USD_MINIMUM_AMOUNT = 100 // COIN-M 先物の注文最小値(USD
 /* eslint @typescript-eslint/no-explicit-any: 0 */
 const binanceOrder: BinanceOrderFunction = async (request: Request, response: Response): Promise<Response> => {
     const body = request.body
-    if (!body.strategy || body.strategy.order.comment !== 'entry') {
+    if (!body.strategy) {
         return response.send('not entry request')
     }
 
@@ -60,6 +60,19 @@ const binanceOrder: BinanceOrderFunction = async (request: Request, response: Re
     const apiKey = secrets.find((secret) => secret.name === NAME_TAG_BINANCE_KEY)
     const apiSecret = secrets.find((secret) => secret.name === NAME_TAG_BINANCE_SECRET)
     const ccxt = new CcxtWrapper(apiKey!.data, apiSecret!.data, body.type, ExchangeName.BINANCE)
+
+    if (body.strategy.order.comment === 'exit') {
+        // ポジションクローズ後に残っている注文をキャンセル
+        try {
+            const orders = await ccxt.getOrders(body.symbol)
+            await ccxt.cancelOrders(orders)
+        } catch (error) {
+            logger.warn(error)
+            return response.status(500).send('cancel orders error')
+        }
+        return response.send('open orders canceled')
+    }
+
     let availableBalance = 0
     try {
         availableBalance = await ccxt.getAvailableBalance(body.marginCoin)

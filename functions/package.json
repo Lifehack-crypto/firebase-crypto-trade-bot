@@ -1,5 +1,9 @@
 {
-  "name": "functions",
+  "name": "firebase-crypto-trade-bot",
+  "author": {
+    "name": "Naoki Yamazaki",
+    "email": "felixsolis.diegodealmagro@gmail.com"
+  },
   "scripts": {
     "lint": "eslint --ext .ts .",
     "prettier": "prettier --write src/**/*.ts",

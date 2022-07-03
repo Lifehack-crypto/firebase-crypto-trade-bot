@@ -12,6 +12,8 @@ const stopOrderSpyOn = jest.spyOn(CcxtWrapper.prototype, 'stopOrder')
 const takeProfitOrderSpyOn = jest.spyOn(CcxtWrapper.prototype, 'takeProfitOrder')
 const createTpSlOrderPrices = jest.spyOn(CcxtWrapper.prototype, 'createTpSlOrderPrices')
 const accessSecretVersionSpyOn = jest.spyOn(SecretManagerServiceClient.prototype, 'accessSecretVersion')
+const getOrdersSpyOn = jest.spyOn(CcxtWrapper.prototype, 'getOrders')
+const cancelOrdersSpyOn = jest.spyOn(CcxtWrapper.prototype, 'cancelOrders')
 
 /* eslint @typescript-eslint/no-explicit-any: 0 */
 describe('binanceOrder', () => {
@@ -65,6 +67,8 @@ describe('binanceOrder', () => {
         takeProfitOrderSpyOn.mockRestore()
         createTpSlOrderPrices.mockRestore()
         accessSecretVersionSpyOn.mockRestore()
+        getOrdersSpyOn.mockRestore()
+        cancelOrdersSpyOn.mockRestore()
     })
 
     test('BTC future ロング', async () => {
@@ -464,7 +468,22 @@ describe('binanceOrder', () => {
         expect(result).toBe('order success')
     })
 
-    test('request.body.strategy.order.comment !== entry', async () => {
+    test('does not have request.body.strategy ', async () => {
+        const req = {
+            body: {
+                botName: 'test bot',
+                ticker: 'XRPUSDTPERP',
+                symbol: 'XRPUSDT',
+                type: "future",
+                marginCoin: 'USDT',
+                strategy: null
+            }
+        } as Request
+        const result = await binanceOrder(req, res)
+        expect(result).toBe('not entry request')
+    })
+
+    test('request.body.strategy.order.comment === exit', async () => {
         const req = {
             body: {
                 botName: 'test bot',
@@ -486,8 +505,79 @@ describe('binanceOrder', () => {
                 }
             }
         } as Request
+        const orders = [
+            {
+                id: 'order_id_1',
+                symbol: 'XRPUSDT'
+            },
+            {
+                id: 'order_id_2',
+                symbol: 'XRPUSDT'
+            }
+        ]
+
+        accessSecretVersionSpyOn.mockImplementationOnce(async () => {
+            return accessSecretKey
+        }).mockImplementationOnce(async () => {
+            return accessSecret
+        })
+        getOrdersSpyOn.mockImplementationOnce(async (): Promise<any> => {
+            return orders
+        })
         const result = await binanceOrder(req, res)
-        expect(result).toBe('not entry request')
+        expect(getOrdersSpyOn).toHaveBeenCalledWith(req.body.symbol)
+        expect(cancelOrdersSpyOn).toHaveBeenCalledWith(orders)
+        expect(result).toBe('open orders canceled')
+    })
+
+    test('オーダーキャンセル失敗', async () => {
+        const req = {
+            body: {
+                botName: 'test bot',
+                ticker: 'XRPUSDTPERP',
+                symbol: 'XRPUSDT',
+                type: "future",
+                marginCoin: 'USDT',
+                strategy: {
+                    order: {
+                        price: '1.5',
+                        action: 'sell',
+                        contracts: '1',
+                        id: 'sell entry id',
+                        comment: 'exit'
+                    },
+                    marketPosition: 'short',
+                    market_position_size: '0.01',
+                    positionSize: '-0.01'
+                }
+            }
+        } as Request
+        const orders = [
+            {
+                id: 'order_id_1',
+                symbol: 'XRPUSDT'
+            },
+            {
+                id: 'order_id_2',
+                symbol: 'XRPUSDT'
+            }
+        ]
+
+        accessSecretVersionSpyOn.mockImplementationOnce(async () => {
+            return accessSecretKey
+        }).mockImplementationOnce(async () => {
+            return accessSecret
+        })
+        getOrdersSpyOn.mockImplementationOnce(async (): Promise<any> => {
+            return orders
+        })
+        cancelOrdersSpyOn.mockImplementationOnce(async () => {
+            throw new Error('cancelOrders error')
+        })
+        const result = await binanceOrder(req, res)
+        expect(getOrdersSpyOn).toHaveBeenCalledWith(req.body.symbol)
+        expect(cancelOrdersSpyOn).toHaveBeenCalledWith(orders)
+        expect(result).toBe('cancel orders error')
     })
 
     test('body.marginCoin(証拠金)がアルトコイン', async () => {

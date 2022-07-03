@@ -1,6 +1,7 @@
 import CcxtWrapper from '../../src/utils/ccxtWrapper'
 import { TpAndSl, ExchangeType } from '../../src/types/utils/ccxtWrapper'
 import { binance, Order } from 'ccxt'
+import { BinanceOrderResponse } from '../../src/types/response/orderResponse'
 jest.mock('ccxt')
 
 describe('ccxtWrapper', () => {
@@ -12,11 +13,15 @@ describe('ccxtWrapper', () => {
         const testAmount = 1000
         const fetchBalanceMock = jest.spyOn(binance.prototype, 'fetchBalance')
         const createOrderMock = jest.spyOn(binance.prototype, 'createOrder')
+        const fetchOpenOrdersMock = jest.spyOn(binance.prototype, 'fetchOpenOrders')
+        const cancelOrderMock = jest.spyOn(binance.prototype, 'cancelOrder')
         const apiKey = 'key'
         const secret = 'secret'
         afterEach(() => {
             fetchBalanceMock.mockRestore()
             createOrderMock.mockRestore()
+            fetchOpenOrdersMock.mockRestore()
+            cancelOrderMock.mockRestore()
         })
 
         test('getAvailableBalance', async () => {
@@ -332,6 +337,123 @@ describe('ccxtWrapper', () => {
                 expect(result).toHaveProperty('stopLossPrice', (orderResult.price * stopLoss))
                 expect(result).toHaveProperty('takeProfitPrice', (orderResult.price * takeProfit))
             })
+        })
+
+        test('getOrders', async () => {
+            const orders = [
+                {
+                    "info": {
+                        "orderId": "51344892025",
+                        "symbol": "BTCUSDT",
+                        "status": "NEW",
+                        "clientOrderId": "x-xcKtGhcu8f0f721ac9af4dbca8eeef",
+                        "price": "10000",
+                        "avgPrice": "0.00000",
+                        "origQty": "0.028",
+                        "executedQty": "0",
+                        "cumQty": "0",
+                        "cumQuote": "0",
+                        "timeInForce": "GTC",
+                        "type": "LIMIT",
+                        "reduceOnly": false,
+                        "closePosition": false,
+                        "side": "SELL",
+                        "positionSide": "BOTH",
+                        "stopPrice": "0",
+                        "workingType": "CONTRACT_PRICE",
+                        "priceProtect": false,
+                        "origType": "LIMIT",
+                        "updateTime": "1650819352434",
+                    },
+                    "id": "51344892025",
+                    "clientOrderId": "x-xcKtGhcu8f0f721ac9af4dbca8eeef",
+                    "timestamp": 1650819352434,
+                    "datetime": "2022-04-24T16:55:52.434Z",
+                    "symbol": "BTC/USDT",
+                    "type": "limit",
+                    "timeInForce": "GTC",
+                    "side": "sell",
+                    "price": 10000,
+                    "amount": 0.028,
+                    "cost": 0,
+                    "filled": 0,
+                    "remaining": 0.028,
+                    "status": "closed",
+                    "fee": {
+                        type: 'taker',
+                        currency: 'USDT',
+                        rate: 0,
+                        cost: 0
+                    },
+                    "lastTradeTimestamp": 1650819352434,
+                }
+            ]
+
+            fetchOpenOrdersMock.mockImplementationOnce(async (): Promise<any> => {
+                return orders
+            })
+            const ccxtWrapper = new CcxtWrapper(apiKey, secret, ExchangeType.DELIVERY, exchangeName)
+            const symbol = 'BTCUSDT'
+            const result = await ccxtWrapper.getOrders(symbol)
+            expect(fetchOpenOrdersMock).toHaveBeenCalledWith(symbol)
+            expect(result).toEqual(orders)
+        })
+
+        test('cancelOrders', async () => {
+            const orders: BinanceOrderResponse[] = [
+                {
+                    info: {
+                        orderId: "51344892025",
+                        symbol: "BTCUSDT",
+                        status: "NEW",
+                        clientOrderId: "x-xcKtGhcu8f0f721ac9af4dbca8eeef",
+                        price: "10000",
+                        avgPrice: "0.00000",
+                        origQty: "0.028",
+                        executedQty: "0",
+                        cumQty: "0",
+                        cumQuote: "0",
+                        timeInForce: "GTC",
+                        type: "LIMIT",
+                        reduceOnly: false,
+                        closePosition: false,
+                        side: "SELL",
+                        positionSide: "BOTH",
+                        stopPrice: "0",
+                        workingType: "CONTRACT_PRICE",
+                        priceProtect: false,
+                        origType: "LIMIT",
+                        updateTime: "1650819352434",
+                    },
+                    id: "51344892025",
+                    clientOrderId: "x-xcKtGhcu8f0f721ac9af4dbca8eeef",
+                    timestamp: 1650819352434,
+                    datetime: "2022-04-24T16:55:52.434Z",
+                    symbol: "BTC/USDT",
+                    type: "limit",
+                    timeInForce: "GTC",
+                    side: "sell" as 'sell' | 'buy',
+                    price: 10000,
+                    amount: 0.028,
+                    cost: 0,
+                    filled: 0,
+                    remaining: 0.028,
+                    status: 'open',
+                    fee: {
+                        type: 'taker',
+                        currency: 'USDT',
+                        rate: 0,
+                        cost: 0
+                    },
+                    trades: [],
+                    lastTradeTimestamp: 1650819352434,
+                }
+            ]
+
+            const ccxtWrapper = new CcxtWrapper(apiKey, secret, ExchangeType.DELIVERY, exchangeName)
+            const result = await ccxtWrapper.cancelOrders(orders)
+            expect(cancelOrderMock).toHaveBeenCalledWith(orders[0].id, orders[0].symbol)
+            expect(result).toBeUndefined()
         })
     })
 })
