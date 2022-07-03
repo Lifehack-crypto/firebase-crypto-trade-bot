@@ -85,6 +85,19 @@ export default class CcxtWrapper {
         return orderResult
     }
 
+    public async getOrders(symbol: string): Promise<BinanceOrderResponse[]> {
+        const orders: BinanceOrderResponse[] = await this.cex.fetchOpenOrders(symbol)
+        return orders
+    }
+
+    public async cancelOrders(orders: BinanceOrderResponse[]): Promise<void> {
+        await Promise.all(
+            orders.map(async (order) => {
+                await this.cex.cancelOrder(order.id, order.symbol)
+            })
+        )
+    }
+
     // TPとSP価格産出
     public createTpSlOrderPrices(orderInfo: BinanceOrderResponse, takeProfit: number, stopLoss: number): TpAndSl {
         const side = CryptoUtils.isLong(orderInfo.side) ? 'sell' : 'buy' // 現在ポジションと逆にして利確注文に使う。ポジションがlongならsell、shortならbuy。
