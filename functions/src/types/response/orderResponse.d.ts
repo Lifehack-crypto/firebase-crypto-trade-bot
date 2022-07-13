@@ -61,8 +61,8 @@ export type BinanceOrderResponse = {
     filled: number
     remaining: number
     status: string
-    trades?: Trade[]
-    fee?: Fee
+    trades?: Trade[] | []
+    fees?: Fee[] | []
     severity?: string
     message?: string
     lastTradeTimestamp?: number

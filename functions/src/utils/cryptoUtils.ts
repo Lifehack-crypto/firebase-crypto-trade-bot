@@ -1,4 +1,4 @@
-import { Side } from '../types/utils/ccxtWrapper'
+import { Side } from '../types/api/baseExchangeApi'
 
 export default class CryptoUtils {
     static isLong(side: Side): boolean {

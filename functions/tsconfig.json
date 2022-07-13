@@ -10,7 +10,7 @@
     "typeRoots": [
       "node_modules/@types",
       "src/types/modules",
-      "src/types/utils",
+      "src/types/api",
       "src/types/request",
       "src/types/response"
     ]

@@ -1,12 +1,12 @@
 // modules
 import { logger, Request, Response } from 'firebase-functions'
-import CcxtWrapper from '../utils/ccxtWrapper'
+import BinanceExchangeApi from '../api/binanceExchangeApi'
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager'
 import CryptoUtils from '../utils/cryptoUtils'
 // types
 import { BinanceOrderFunction, AccessSecret } from '../types/modules/binanceOrder'
 import { BinanceOrderResponse } from '../types/response/orderResponse'
-import { ExchangeType, ExchangeName } from '../types/utils/ccxtWrapper'
+import { ExchangeType } from '../types/api/baseExchangeApi'
 
 export const BTC_SHORT_SL_WIDTH = 1.012 // BTC shortポジションの損切幅 比率
 export const BTC_SHORT_TP_WIDTH = 0.98 // BTC shortポジションの利確幅 比率
@@ -59,13 +59,13 @@ const binanceOrder: BinanceOrderFunction = async (request: Request, response: Re
 
     const apiKey = secrets.find((secret) => secret.name === NAME_TAG_BINANCE_KEY)
     const apiSecret = secrets.find((secret) => secret.name === NAME_TAG_BINANCE_SECRET)
-    const ccxt = new CcxtWrapper(apiKey!.data, apiSecret!.data, body.type, ExchangeName.BINANCE)
+    const binanceExchangeApi = new BinanceExchangeApi(apiKey!.data, apiSecret!.data, body.type)
 
     if (body.strategy.order.comment === 'exit') {
         // ポジションクローズ後に残っている注文をキャンセル
         try {
-            const orders = await ccxt.getOrders(body.symbol)
-            await ccxt.cancelOrders(orders)
+            const orders = await binanceExchangeApi.getOrders(body.symbol)
+            await binanceExchangeApi.cancelOrders(orders)
         } catch (error) {
             logger.warn(error)
             return response.status(500).send('cancel orders error')
@@ -75,7 +75,7 @@ const binanceOrder: BinanceOrderFunction = async (request: Request, response: Re
 
     let availableBalance = 0
     try {
-        availableBalance = await ccxt.getAvailableBalance(body.marginCoin)
+        availableBalance = await binanceExchangeApi.getAvailableBalance(body.marginCoin)
     } catch (error) {
         logger.warn(error)
         return response.status(500).send('getAvailableBalance error')
@@ -129,15 +129,15 @@ const binanceOrder: BinanceOrderFunction = async (request: Request, response: Re
     }
 
     try {
-        const newOrderResponse = (await ccxt.newOrder(
+        const newOrderResponse = (await binanceExchangeApi.newOrder(
             body.symbol,
             body.strategy.order.action,
             amount,
             limitPrice
         )) as unknown as BinanceOrderResponse
-        const prices = ccxt.createTpSlOrderPrices(newOrderResponse, takeProfit, stopLoss)
-        await ccxt.stopOrder(newOrderResponse, prices)
-        await ccxt.takeProfitOrder(newOrderResponse, prices)
+        const prices = binanceExchangeApi.createTpSlOrderPrices(newOrderResponse, takeProfit, stopLoss)
+        await binanceExchangeApi.stopOrder(newOrderResponse, prices)
+        await binanceExchangeApi.takeProfitOrder(newOrderResponse, prices)
     } catch (error) {
         logger.warn(error)
         return response.status(500).send('order error')
